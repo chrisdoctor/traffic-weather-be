@@ -1,19 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { Traffic, CameraItems } from './traffic.interface'
 import { HttpService } from '@nestjs/axios';
-import { lastValueFrom, map, tap } from 'rxjs';
+import { lastValueFrom, map } from 'rxjs';
 
 @Injectable()
 export class TrafficService {
     constructor(private readonly httpService: HttpService) { }
     
     async getTraffic(dateTime: string): Promise<CameraItems[]> {
-        const url = 'https://api.data.gov.sg/v1/transport/traffic-images?date_time=2023-05-02T11%3A21%3A15'
+        console.log('PARAM', dateTime)
+        const url = `https://api.data.gov.sg/v1/transport/traffic-images?date_time=${encodeURIComponent(dateTime)}`
+        console.log(url);
         const data = await lastValueFrom(
             this.httpService.get(url).pipe(
                 map(resp => resp.data),
                 map(async data => {
-                    const searchedData = this.searchData(data, 'abc')
+                    const searchedData = this.searchData(data, dateTime)
 
                     const displayNames = await this.getLocDisplayName(searchedData)
 
@@ -31,10 +33,9 @@ export class TrafficService {
     }
 
     private searchData = (data: Traffic, dateTime: string): CameraItems[] => {
-        let param = dateTime;
-        param = "2023-05-02T11:19:57+08:00";    
+        // const param = "2023-05-02T11:19:57+08:00";    
         const arr = data.items[0].cameras.filter(async (obj) => 
-            obj.timestamp === param
+            obj.timestamp === dateTime
         )
 
         return arr;
